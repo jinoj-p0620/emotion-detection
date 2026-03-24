@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+
+# Django
+db.sqlite3
+media/
+
+# IDE
+.idea/
+
+# Env
+venv/
+.env
+
+# Model files
+*.h5
+*.dat
+*.pkl
+*.gz

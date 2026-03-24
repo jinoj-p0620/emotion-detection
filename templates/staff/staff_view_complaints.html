@@ -1,0 +1,217 @@
+{% extends 'staff/staff_index.html' %}
+{% block body %}
+
+<style>
+    /* Section Header */
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .section-header h2 {
+        font-weight: 800;
+        color: #1e293b;
+        font-size: 1.6rem;
+    }
+
+    .btn-raise {
+        background: #e11d48; /* Red color for complaints */
+        color: white;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.3s;
+    }
+
+    .btn-raise:hover {
+        background: #be123c;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(225, 29, 72, 0.2);
+    }
+
+    /* Complaint List Styling */
+    .complaint-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .complaint-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+
+    .card-meta {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 30px;
+        text-transform: uppercase;
+    }
+
+    .status-pending { background: #fff7ed; color: #c2410c; }
+    .status-replied { background: #f0f9ff; color: #0061ff; }
+
+    .issue-text {
+        font-size: 1rem;
+        color: #1e293b;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-left: 15px;
+        border-left: 4px solid #e2e8f0;
+    }
+
+    /* Admin Reply Box */
+    .reply-box {
+        background: #f8fafc;
+        border-radius: 15px;
+        padding: 20px;
+        border: 1px dashed #cbd5e1;
+    }
+
+    .reply-box h4 {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .reply-content {
+        font-size: 0.95rem;
+        color: #475569;
+        line-height: 1.5;
+    }
+
+    /* Modal Styling */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0; top: 0;
+        width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(8px);
+    }
+
+    .modal-content {
+        background: white;
+        margin: 10% auto;
+        padding: 35px;
+        border-radius: 24px;
+        width: 500px;
+        animation: slideUp 0.4s ease-out;
+    }
+
+    @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .form-textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        margin-top: 10px;
+    }
+</style>
+
+<div class="section-header">
+    <h2><i class="fas fa-exclamation-triangle" style="color: #e11d48; margin-right: 12px;"></i>Grievance Portal</h2>
+    <button class="btn-raise" onclick="toggleModal(true)">
+        <i class="fas fa-plus-circle"></i> Raise New Complaint
+    </button>
+</div>
+
+<div class="complaint-stack">
+    {% for i in data %}
+    <div class="complaint-card">
+        <div class="card-meta">
+            <span style="color: #94a3b8;"><i class="far fa-calendar-alt"></i> {{ i.date }}</span>
+            <span class="status-badge {% if i.reply == 'pending' %}status-pending{% else %}status-replied{% endif %}">
+                {% if i.reply == 'pending' %}Waiting for Response{% else %}Resolved{% endif %}
+            </span>
+        </div>
+
+        <div class="issue-text">
+            {{ i.complaint }}
+        </div>
+
+        <div class="reply-box">
+            <h4><i class="fas fa-user-shield"></i> Administrator's Response</h4>
+            <div class="reply-content">
+                {% if i.reply == 'pending' %}
+                    <span style="font-style: italic; color: #cbd5e1;">Your complaint is currently under review by the management team.</span>
+                {% else %}
+                    {{ i.reply }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div style="text-align: center; padding: 100px; color: #94a3b8;">
+        <i class="fas fa-check-circle" style="font-size: 4rem; opacity: 0.1; margin-bottom: 20px; display: block;"></i>
+        <p>No complaints filed. Your record is clear.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<div id="complaintModal" class="modal">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h3 style="font-weight: 800; font-size: 1.4rem;">File a Complaint</h3>
+            <span onclick="toggleModal(false)" style="cursor: pointer; font-size: 1.5rem; color: #94a3b8;">&times;</span>
+        </div>
+
+        <form action="/myapp/staff_send_complaint_post/" method="post">
+            {% csrf_token %}
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: 700; color: #475569; font-size: 0.85rem;">Describe the Issue</label>
+                <textarea name="complaint_text" class="form-textarea" placeholder="Provide clear details about your grievance..." required maxlength="200"></textarea>
+            </div>
+
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 25px;">
+                <i class="fas fa-info-circle"></i> This will be sent directly to the Admin. Please keep it concise (max 200 chars).
+            </p>
+
+            <button type="submit" class="btn-raise" style="width: 100%; justify-content: center;">
+                Submit Grievance
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function toggleModal(show) {
+        document.getElementById('complaintModal').style.display = show ? 'block' : 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('complaintModal')) {
+            toggleModal(false);
+        }
+    }
+</script>
+
+{% endblock %}

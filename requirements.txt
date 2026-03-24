@@ -1,0 +1,14 @@
+Django>=4.0
+numpy
+pandas
+opencv-python
+dlib
+tensorflow
+keras
+scikit-learn
+librosa
+soundfile
+joblib
+matplotlib
+Pillow
+scipy

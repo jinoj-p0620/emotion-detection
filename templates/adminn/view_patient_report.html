@@ -1,0 +1,164 @@
+{% extends 'adminn/admin_extend.html' %}
+{% block body %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    body { font-family: sans-serif; background: #f4f7f6; padding: 20px; }
+    .container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+    .chart-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 45%; min-width: 400px; }
+
+    /* Table Styling */
+    .table-container { background: white; padding: 20px; border-radius: 8px; margin-top: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+    th { background-color: #2c3e50; color: white; }
+
+    /* Filter Bar Styling */
+    .filter-bar {
+        margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 20px;
+        background: #ecf0f1;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    .filter-group { display: flex; align-items: center; gap: 8px; }
+    .filter-input { padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+</style>
+
+<h2 style="text-align: center;">Emotion Analysis Report: Patient #{{ data.0.patient_id_id }}</h2>
+
+<div class="container">
+    <div class="chart-box">
+        <h3>Emotion Distribution by Source</h3>
+        <canvas id="sourceChart"></canvas>
+    </div>
+    <div class="chart-box">
+        <h3>Emotion Timeline</h3>
+        <canvas id="timeChart"></canvas>
+    </div>
+</div>
+
+<div class="table-container">
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label><strong>Source:</strong></label>
+            <select id="sourceFilter" class="filter-input" onchange="applyFilters()">
+                <option value="all">All Sources</option>
+                <option value="video">Video</option>
+                <option value="audio">Audio</option>
+                <option value="eeg">EEG</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label><strong>Search Emotion:</strong></label>
+            <input type="text" id="emotionSearch" class="filter-input" onkeyup="applyFilters()" placeholder="e.g. Happy...">
+        </div>
+
+        <small style="color: #7f8c8d;">Showing <span id="rowCount">0</span> records</small>
+    </div>
+
+    <table id="emotionTable">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Source</th>
+                <th>Detected Emotion</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            {% for i in data %}
+            <tr class="emotion-row" data-source="{{ i.source|lower }}" data-emotion="{{ i.emotion|lower }}">
+                <td>{{ i.date }}</td>
+                <td>{{ i.time }}</td>
+                <td>{{ i.source }}</td>
+                <td>{{ i.emotion }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // --- MULTI-FILTER LOGIC ---
+    function applyFilters() {
+        const sourceValue = document.getElementById("sourceFilter").value;
+        const searchValue = document.getElementById("emotionSearch").value.toLowerCase();
+        const rows = document.querySelectorAll(".emotion-row");
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const rowSource = row.getAttribute("data-source");
+            const rowEmotion = row.getAttribute("data-emotion");
+
+            // Check if row matches both Source Dropdown AND Search Text
+            const matchesSource = (sourceValue === "all" || rowSource === sourceValue);
+            const matchesSearch = rowEmotion.includes(searchValue);
+
+            if (matchesSource && matchesSearch) {
+                row.style.display = "";
+                visibleCount++;
+            } else {
+                row.style.display = "none";
+            }
+        });
+        document.getElementById("rowCount").innerText = visibleCount;
+    }
+
+    // Initialize row count on load
+    window.onload = applyFilters;
+
+    // --- Graph Data (EXACTLY AS PROVIDED BEFORE) ---
+    const sourceData = {{ source_json|safe }};
+    const timeLabels = {{ time_labels|safe }};
+    const emotionValues = {{ emotion_values|safe }};
+    const allEmotions = {{ emotion_list|safe }};
+
+    const sources = [...new Set(sourceData.map(d => d.source))];
+    const sourceDatasets = allEmotions.map((emo, index) => {
+        const colors = ['#e74c3c', '#8e44ad', '#2c3e50', '#2ecc71', '#3498db', '#f1c40f', '#95a5a6'];
+        return {
+            label: emo,
+            data: sources.map(src => {
+                const match = sourceData.find(d => d.source === src && d.emotion.toLowerCase() === emo.toLowerCase());
+                return match ? match.count : 0;
+            }),
+            backgroundColor: colors[index]
+        };
+    });
+
+    new Chart(document.getElementById('sourceChart'), {
+        type: 'bar',
+        data: { labels: sources, datasets: sourceDatasets },
+        options: { responsive: true }
+    });
+
+    const mappedTimeData = emotionValues.map(val => allEmotions.findIndex(e => e.toLowerCase() === val.toLowerCase()));
+    new Chart(document.getElementById('timeChart'), {
+        type: 'line',
+        data: {
+            labels: timeLabels,
+            datasets: [{
+                label: 'Emotion State',
+                data: mappedTimeData,
+                borderColor: '#2980b9',
+                stepped: true,
+                fill: false
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: { callback: function(value) { return allEmotions[value]; }, stepSize: 1 }
+                }
+            }
+        }
+    });
+</script>
+
+{% endblock %}

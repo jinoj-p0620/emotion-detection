@@ -1,0 +1,259 @@
+{% extends 'adminn/admin_extend.html' %}
+{% block body %}
+
+<style>
+    /* Gallery Grid Layout */
+    .vcard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 25px;
+        padding: 10px 0;
+    }
+
+    /* Page Header Styles */
+    .header-section {
+        background: #ffffff;
+        padding: 25px;
+        border-radius: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid #eef2f7;
+    }
+
+    .header-section h2 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1a202c;
+        margin: 0;
+    }
+
+    /* VCard Design */
+    .patient-vcard {
+        background: #ffffff;
+        border-radius: 22px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+    }
+
+    .patient-vcard:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 30px rgba(26, 115, 232, 0.1);
+        border-color: #1a73e8;
+    }
+
+    /* VCard Top Section (Image & Banner) */
+    .vcard-top {
+        height: 120px;
+        background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+        position: relative;
+        display: flex;
+        justify-content: center;
+    }
+
+    .vcard-img-wrapper {
+        position: absolute;
+        bottom: -40px;
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        padding: 4px;
+        background: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .vcard-img-wrapper img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    /* VCard Content */
+    .vcard-body {
+        padding: 55px 20px 20px 20px;
+        text-align: center;
+    }
+
+    .vcard-body h3 {
+        font-size: 1.2rem;
+        color: #1e293b;
+        margin-bottom: 5px;
+    }
+
+    .patient-id-badge {
+        font-size: 0.7rem;
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 3px 10px;
+        border-radius: 30px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    /* Stats / Info Row */
+    .vcard-info-box {
+        background: #f8fafc;
+        border-radius: 15px;
+        padding: 15px;
+        margin: 15px 0;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        text-align: left;
+    }
+
+    .info-line {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.85rem;
+        color: #475569;
+    }
+
+    .info-line i {
+        color: #1a73e8;
+        width: 15px;
+        text-align: center;
+    }
+
+    .consultant-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #1a73e8;
+        margin-top: 5px;
+    }
+
+    /* Action Footer */
+    .vcard-footer {
+        padding-top: 15px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .btn-vcard-report {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        background: #1a73e8;
+        color: white;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        transition: 0.3s;
+    }
+
+    .btn-vcard-report:hover {
+        background: #0d47a1;
+        box-shadow: 0 4px 12px rgba(13, 71, 161, 0.2);
+    }
+
+    /* Search Bar Styling */
+    .search-pill-wrapper {
+        position: relative;
+    }
+
+    .search-pill-wrapper input {
+        border: 1px solid #e2e8f0;
+        padding: 10px 20px 10px 45px;
+        border-radius: 30px;
+        width: 300px;
+        transition: 0.3s;
+    }
+
+    .search-pill-wrapper input:focus {
+        outline: none;
+        border-color: #1a73e8;
+        box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.1);
+    }
+
+    .search-pill-wrapper i {
+        position: absolute;
+        left: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+    }
+</style>
+
+<div class="header-section">
+    <div>
+        <h2>Patient Gallery</h2>
+        <span style="font-size: 0.85rem; color: #94a3b8;">Total Records: {{ data|length }}</span>
+    </div>
+    <div class="search-pill-wrapper">
+        <i class="fas fa-search"></i>
+        <input type="text" id="patientSearch" placeholder="Search by name, ID or place...">
+    </div>
+</div>
+
+<div class="vcard-grid" id="vcardGrid">
+    {% for i in data %}
+    <div class="patient-vcard" data-search="{{ i.name }} {{ i.id }} {{ i.place }}">
+        <div class="vcard-top">
+            <div class="vcard-img-wrapper">
+                <img src="{{ i.photo.url }}" alt="Patient photo">
+            </div>
+        </div>
+
+        <div class="vcard-body">
+            <span class="patient-id-badge">ID: #P-{{ i.id }}</span>
+            <h3>{{ i.name }}</h3>
+            <div class="consultant-pill">
+                <i class="fas fa-user-md"></i>  {{ i.STAFF.name }}
+            </div>
+
+            <div class="vcard-info-box">
+                <div class="info-line">
+                    <i class="fas fa-phone-alt"></i>
+                    <span>{{ i.phone }}</span>
+                </div>
+                <div class="info-line">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>{{ i.place }}, {{ i.post }}</span>
+                </div>
+                <div class="info-line">
+                    <i class="fas fa-hashtag"></i>
+                    <span>PIN: {{ i.pin }}</span>
+                </div>
+            </div>
+
+            <div class="vcard-footer">
+                <a href="/myapp/view_patient_report/{{ i.id }}/" class="btn-vcard-report">
+                    <i class="fas fa-file-medical"></i> View Report
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div style="grid-column: 1/-1; text-align: center; padding: 100px;">
+        <i class="fas fa-user-slash" style="font-size: 4rem; color: #f1f5f9; margin-bottom: 20px; display: block;"></i>
+        <h3 style="color: #cbd5e1;">The patient registry is empty</h3>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    document.getElementById('patientSearch').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const cards = document.querySelectorAll('.patient-vcard');
+
+        cards.forEach(card => {
+            const searchData = card.getAttribute('data-search').toLowerCase();
+            if (searchData.includes(searchTerm)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+</script>
+
+{% endblock %}

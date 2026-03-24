@@ -1,0 +1,296 @@
+{% extends 'staff/staff_index.html' %}
+{% block body %}
+
+<style>
+    /* Section Header Integration */
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .section-header h2 {
+        font-weight: 800;
+        color: #1e293b;
+        font-size: 1.5rem;
+    }
+
+    .btn-add {
+        background: #0061ff;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.3s;
+        text-decoration: none;
+    }
+
+    .btn-add:hover {
+        background: #004ecc;
+        transform: translateY(-2px);
+    }
+
+    /* Patient Card Grid */
+    .patient-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+    }
+
+    .p-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: 0.3s;
+        position: relative;
+    }
+
+    .p-card:hover {
+        border-color: #0061ff;
+        box-shadow: 0 10px 20px rgba(0, 97, 255, 0.05);
+    }
+
+    .p-photo {
+        width: 85px;
+        height: 85px;
+        border-radius: 15px;
+        object-fit: cover;
+        background: #f1f5f9;
+    }
+
+    .p-info h3 { font-size: 1.1rem; color: #1e293b; margin-bottom: 4px; }
+    .p-info p { font-size: 0.8rem; color: #64748b; margin: 2px 0; }
+    .p-info i { width: 15px; color: #0061ff; }
+
+    /* New Report Link */
+    .view-report-link {
+        display: inline-block;
+        margin-top: 8px;
+        font-size: 0.75rem;
+        color: #0061ff;
+        font-weight: 700;
+        text-decoration: none;
+        transition: 0.2s;
+    }
+
+    .view-report-link:hover {
+        text-decoration: underline;
+        color: #004ecc;
+    }
+
+    /* Action Buttons inside Card */
+    .card-actions {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        display: flex;
+        gap: 8px;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: 0.2s;
+        border: none;
+        text-decoration: none;
+    }
+
+    .edit-btn { background: #f0f7ff; color: #0061ff; }
+    .edit-btn:hover { background: #0061ff; color: white; }
+    .delete-btn { background: #fff1f2; color: #e11d48; }
+    .delete-btn:hover { background: #e11d48; color: white; }
+    .report-btn { background: #f0fdf4; color: #16a34a; }
+    .report-btn:hover { background: #16a34a; color: white; }
+
+    /* Modal Styling */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0; top: 0;
+        width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(8px);
+    }
+
+    .modal-content {
+        background: white;
+        margin: 5% auto;
+        padding: 35px;
+        border-radius: 24px;
+        width: 500px;
+        animation: slideDown 0.4s ease-out;
+    }
+
+    @keyframes slideDown {
+        from { transform: translateY(-30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 8px; color: #475569; }
+    .form-input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.9rem; }
+</style>
+
+<div class="section-header">
+    <h2><i class="fas fa-users-medical" style="color: #0061ff; margin-right: 10px;"></i> My Patients</h2>
+    <button class="btn-add" onclick="toggleModal('patientModal', true)">
+        <i class="fas fa-plus"></i> New Intake
+    </button>
+</div>
+
+<div class="patient-grid">
+    {% for i in data %}
+    <div class="p-card">
+        <div class="card-actions">
+            <a href="/myapp/staff_view_patient_report/{{ i.id }}#main" class="action-btn report-btn" title="Medical Report">
+                <i class="fas fa-file-medical-alt"></i>
+            </a>
+            <button class="action-btn edit-btn" title="Edit"
+                onclick="openEditModal('{{ i.id }}', '{{ i.name }}', '{{ i.phone }}', '{{ i.place }}', '{{ i.post }}', '{{ i.pin }}')">
+                <i class="fas fa-edit"></i>
+            </button>
+            <a href="/myapp/staff_delete_patient/{{ i.id }}" class="action-btn delete-btn" title="Delete" onclick="return confirm('Archive this patient record?')">
+                <i class="fas fa-trash"></i>
+            </a>
+        </div>
+
+        <img src="{{ i.photo.url }}" class="p-photo" alt="Patient">
+        <div class="p-info">
+            <h3>{{ i.name }}</h3>
+            <p><i class="fas fa-phone"></i> {{ i.phone }}</p>
+            <p><i class="fas fa-map-marker-alt"></i> {{ i.place }}, {{ i.post }}</p>
+            <p><i class="fas fa-barcode"></i> PIN: {{ i.pin }}</p>
+            <a href="/myapp/find_eeg_emotion/{{ i.id }}#main" class="view-report-link">
+                <i class="fas fa-external-link-alt" style="font-size: 0.7rem; color: inherit;"></i> EEG Emotion
+            </a>
+        </div>
+    </div>
+    {% empty %}
+    <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #94a3b8;">
+        <i class="fas fa-user-slash" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.3;"></i>
+        <p>No patients currently assigned to you.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<div id="patientModal" class="modal">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h3 style="font-weight: 800; font-size: 1.4rem;">Patient Registration</h3>
+            <span onclick="toggleModal('patientModal', false)" style="cursor: pointer; font-size: 1.5rem; color: #94a3b8;">&times;</span>
+        </div>
+
+        <form action="/myapp/staff_add_patient_post/" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" name="name" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>Contact Number</label>
+                <input type="text" name="phone" class="form-input" required>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label>City / Place</label>
+                    <input type="text" name="place" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Post Office</label>
+                    <input type="text" name="post" class="form-input" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>PIN Code</label>
+                <input type="text" name="pin" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>Patient Photo</label>
+                <input type="file" name="photo" class="form-input" required>
+            </div>
+            <button type="submit" class="btn-add" style="width: 100%; justify-content: center;">Complete Intake</button>
+        </form>
+    </div>
+</div>
+
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h3 style="font-weight: 800; font-size: 1.4rem;">Update Patient File</h3>
+            <span onclick="toggleModal('editModal', false)" style="cursor: pointer; font-size: 1.5rem; color: #94a3b8;">&times;</span>
+        </div>
+
+        <form action="/myapp/staff_edit_patient_post/" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="pid" id="edit_pid">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" name="name" id="edit_name" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>Contact Number</label>
+                <input type="text" name="phone" id="edit_phone" class="form-input" required>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label>City / Place</label>
+                    <input type="text" name="place" id="edit_place" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Post Office</label>
+                    <input type="text" name="post" id="edit_post" class="form-input" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>PIN Code</label>
+                <input type="text" name="pin" id="edit_pin" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>Patient Photo (Leave empty to keep current)</label>
+                <input type="file" name="photo" class="form-input">
+            </div>
+            <button type="submit" class="btn-add" style="width: 100%; justify-content: center; background: #22c55e;">Save Changes</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function toggleModal(modalId, show) {
+        document.getElementById(modalId).style.display = show ? 'block' : 'none';
+    }
+
+    function openEditModal(id, name, phone, place, post, pin) {
+        document.getElementById('edit_pid').value = id;
+        document.getElementById('edit_name').value = name;
+        document.getElementById('edit_phone').value = phone;
+        document.getElementById('edit_place').value = place;
+        document.getElementById('edit_post').value = post;
+        document.getElementById('edit_pin').value = pin;
+        toggleModal('editModal', true);
+    }
+
+    window.onclick = function(event) {
+        if (event.target.className === 'modal') {
+            event.target.style.display = 'none';
+        }
+    }
+</script>
+
+{% endblock %}

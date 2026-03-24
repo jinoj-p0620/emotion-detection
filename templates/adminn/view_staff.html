@@ -1,0 +1,304 @@
+{% extends 'adminn/admin_extend.html' %}
+{% block body %}
+
+<style>
+    :root {
+        --hospital-blue: #2563eb;
+        --hospital-soft: #f8fafc;
+        --status-active: #22c55e;
+        --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Page Header */
+    .page-header {
+        background: white;
+        padding: 2rem;
+        border-radius: 24px;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid #e2e8f0;
+    }
+
+    .header-text h1 {
+        font-size: 1.75rem;
+        color: #1e293b;
+        font-weight: 800;
+        margin: 0;
+    }
+
+    .header-text p {
+        color: #64748b;
+        margin-top: 4px;
+    }
+
+    /* Search & Add Bar */
+    .action-bar {
+        display: flex;
+        gap: 12px;
+    }
+
+    .search-container {
+        position: relative;
+    }
+
+    .search-container input {
+        padding: 12px 16px 12px 45px;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        background: #f1f5f9;
+        width: 300px;
+        transition: all 0.3s ease;
+    }
+
+    .search-container input:focus {
+        outline: none;
+        background: white;
+        border-color: var(--hospital-blue);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    }
+
+    .search-container i {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+    }
+
+    .btn-add-staff {
+        background: var(--hospital-blue);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 14px;
+        text-decoration: none;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.3s;
+    }
+
+    .btn-add-staff:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+    }
+
+    /* Card Grid */
+    .staff-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 24px;
+    }
+
+    .staff-card {
+        background: white;
+        border-radius: 24px;
+        padding: 24px;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .staff-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--card-shadow);
+        border-color: var(--hospital-blue);
+    }
+
+    .staff-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 80px;
+        background: linear-gradient(to right, #eff6ff, #dbeafe);
+        z-index: 0;
+    }
+
+    /* Card Content */
+    .card-main {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+    }
+
+    .profile-img {
+        width: 100px;
+        height: 100px;
+        border-radius: 30px;
+        object-fit: cover;
+        border: 4px solid white;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        margin-bottom: 12px;
+    }
+
+    .staff-info h3 {
+        font-size: 1.25rem;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .badge-qual {
+        display: inline-block;
+        background: #dcfce7;
+        color: #166534;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 20px;
+        margin: 8px 0;
+        text-transform: uppercase;
+    }
+
+    .contact-details {
+        margin: 16px 0;
+        text-align: left;
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 16px;
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.85rem;
+        color: #475569;
+        margin-bottom: 8px;
+    }
+
+    .detail-item i {
+        color: var(--hospital-blue);
+        width: 16px;
+    }
+
+    /* Action Buttons */
+    .card-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .btn-action {
+        padding: 10px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-align: center;
+        transition: 0.2s;
+    }
+
+    .btn-edit-alt {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .btn-edit-alt:hover {
+        background: #e2e8f0;
+        color: #1e293b;
+    }
+
+    .btn-delete-alt {
+        background: #fff1f2;
+        color: #e11d48;
+    }
+
+    .btn-delete-alt:hover {
+        background: #ffe4e6;
+    }
+
+    .empty-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 100px;
+        background: white;
+        border-radius: 24px;
+        border: 2px dashed #cbd5e1;
+    }
+</style>
+
+<div class="page-header">
+    <div class="header-text">
+        <h1>Staff Management</h1>
+        <p>Overview of hospital administrative and medical personnel</p>
+    </div>
+    <div class="action-bar">
+        <div class="search-container">
+            <i class="fas fa-search"></i>
+            <input type="text" id="staffSearch" placeholder="Search by name or specialty...">
+        </div>
+        <a href="/myapp/add_staff/#about" class="btn-add-staff">
+            <i class="fas fa-plus"></i> Add New Member
+        </a>
+    </div>
+</div>
+
+<div class="staff-grid" id="staffGrid">
+    {% for i in data %}
+    <div class="staff-card">
+        <div class="card-main">
+            <img src="/media/{{ i.photo }}" class="profile-img" alt="Staff Member">
+            <div class="staff-info">
+                <h3>{{ i.name }}</h3>
+                <span class="badge-qual">{{ i.qualification }}</span>
+            </div>
+        </div>
+
+        <div class="contact-details">
+            <div class="detail-item">
+                <i class="fas fa-envelope"></i>
+                <span>{{ i.email }}</span>
+            </div>
+            <div class="detail-item">
+                <i class="fas fa-phone"></i>
+                <span>{{ i.phone }}</span>
+            </div>
+            <div class="detail-item">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>{{ i.place }}, {{ i.post }} ({{ i.pin }})</span>
+            </div>
+        </div>
+
+        <div class="card-actions">
+            <a href="/myapp/edit_staff/{{ i.id }}#about" class="btn-action btn-edit-alt">
+                <i class="fas fa-pen-to-square"></i> Edit
+            </a>
+            <a href="/myapp/delete_staff/{{ i.id }}" class="btn-action btn-delete-alt" onclick="return confirm('Remove this staff member?')">
+                <i class="fas fa-trash-can"></i> Delete
+            </a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <i class="fas fa-users-slash" style="font-size: 4rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+        <h3>No Staff Records Found</h3>
+        <p>Try adding a new staff member to populate the directory.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    document.getElementById('staffSearch').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const cards = document.querySelectorAll('.staff-card');
+
+        cards.forEach(card => {
+            const name = card.querySelector('h3').textContent.toLowerCase();
+            const qual = card.querySelector('.badge-qual').textContent.toLowerCase();
+            if (name.includes(searchTerm) || qual.includes(searchTerm)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,291 @@
+{% extends 'adminn/admin_extend.html' %}
+{% block body %}
+
+<style>
+    /* Header Section */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        background: #ffffff;
+        padding: 20px 25px;
+        border-radius: 15px;
+        border: 1px solid #eef2f7;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+
+    .page-title h2 {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #1a202c;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .page-title h2 i {
+        color: #1a73e8;
+        background: #e3f2fd;
+        padding: 10px;
+        border-radius: 12px;
+    }
+
+    /* Action Button */
+    .btn-primary-med {
+        background: #1a73e8;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.3s;
+        text-decoration: none;
+    }
+
+    .btn-primary-med:hover {
+        background: #0d47a1;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(26, 115, 232, 0.3);
+    }
+
+    /* Table Styling */
+    .table-card {
+        background: #ffffff;
+        border-radius: 15px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    .med-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .med-table th {
+        background: #f8fafc;
+        padding: 18px 20px;
+        text-align: left;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #64748b;
+        letter-spacing: 1px;
+        border-bottom: 2px solid #edf2f7;
+    }
+
+    .med-table td {
+        padding: 20px;
+        border-bottom: 1px solid #edf2f7;
+        font-size: 0.9rem;
+    }
+
+    /* Alert and Failed Styles */
+    .row-expired {
+        background-color: #fff5f5 !important;
+    }
+
+    .text-failed {
+        color: #e53e3e !important;
+        font-weight: 800;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+    }
+
+    /* Link/File Badges */
+    .file-link {
+        color: #1a73e8;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .file-link:hover { text-decoration: underline; }
+
+    /* Status Pills */
+    .status-pill {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .status-pending { background: #fff3e0; color: #ef6c00; }
+    .status-completed { background: #e8f5e9; color: #2e7d32; }
+    .status-failed { background: #fed7d7; color: #c53030; }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+        background: white;
+        margin: 5% auto;
+        padding: 35px;
+        border-radius: 20px;
+        width: 550px;
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+        animation: slideUp 0.4s ease-out;
+    }
+
+    @keyframes slideUp {
+        from { transform: translateY(30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-weight: 700; color: #475569; margin-bottom: 8px; font-size: 0.85rem; }
+    .form-control { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; }
+</style>
+
+<div class="page-header">
+    <div class="page-title">
+        <h2><i class="fas fa-tasks"></i> Work Assignments</h2>
+    </div>
+    <button class="btn-primary-med" onclick="openModal()">
+        <i class="fas fa-plus-circle"></i> Assign New Work
+    </button>
+</div>
+
+<div class="table-card">
+    <table class="med-table">
+        <thead>
+            <tr>
+                <th>Assigned Staff</th>
+                <th>Work File</th>
+                <th>Submission</th>
+                <th>Deadline</th>
+                <th>Status</th>
+                <th>Assigned Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% now "Y-m-d" as todays_date %}
+            {% for i in data %}
+            {# Logic: If status is not completed and deadline is less than today #}
+            <tr class="{% if i.status != 'completed' and i.last_date|date:'Y-m-d' < todays_date %}row-expired{% endif %}">
+                <td>
+                    <div style="font-weight: 700; color: #1e293b;">{{ i.STAFF.name }}</div>
+                    <div style="font-size: 0.75rem; color: #94a3b8;">{{ i.STAFF.qualification }}</div>
+                </td>
+                <td>
+                    <a href="{{ i.work.url }}" class="file-link">
+                        <i class="fas fa-file-alt"></i> View Instruction
+                    </a>
+                </td>
+                <td>
+                    {% if i.status == "completed" and i.submitted_work %}
+                        <a href="{{ i.submitted_work.url }}" class="file-link" style="color: #10b981;">
+                            <i class="fas fa-file-export"></i> Download Completion
+                        </a>
+                    {% elif i.last_date|date:'Y-m-d' < todays_date %}
+                        <span class="text-failed">
+                            <i class="fas fa-times-circle"></i> Submission Failed
+                        </span>
+                    {% else %}
+                        <span style="color: #cbd5e1; font-style: italic; font-size: 0.8rem;">
+                            <i class="fas fa-hourglass-half"></i> Waiting for upload
+                        </span>
+                    {% endif %}
+                </td>
+                <td>
+                    <strong style="{% if i.status != 'completed' and i.last_date|date:'Y-m-d' < todays_date %}color: #e53e3e;{% else %}color: #4a5568;{% endif %}">
+                        {{ i.last_date }}
+                    </strong>
+                </td>
+                <td>
+                    {% if i.status == "completed" %}
+                        <span class="status-pill status-completed">Completed</span>
+                    {% elif i.last_date|date:'Y-m-d' < todays_date %}
+                        <span class="status-pill status-failed">Expired</span>
+                    {% else %}
+                        <span class="status-pill status-pending">In Progress</span>
+                    {% endif %}
+                </td>
+                <td><span style="color: #64748b;">{{ i.date }}</span></td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 60px; color: #94a3b8;">
+                    <i class="fas fa-clipboard-list" style="font-size: 3rem; margin-bottom: 15px; display: block; opacity: 0.2;"></i>
+                    No assignments found in the registry.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div id="assignModal" class="modal">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h3 style="margin:0; font-weight: 800; color: #1a202c;">Assign Staff Work</h3>
+            <button onclick="closeModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #94a3b8;">&times;</button>
+        </div>
+
+        <form action="/myapp/assign_work_post/" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label>Select Staff Member</label>
+                <select name="staff_id" class="form-control" required>
+                    <option value="" disabled selected>Choose a medical professional...</option>
+                    {% for s in staff_data %}
+                    <option value="{{ s.id }}">{{ s.name }} ({{ s.qualification }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Work Document (File)</label>
+                <input type="file" name="work_file" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label>Last Date for Submission</label>
+                <input type="date" name="last_date" class="form-control" required>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px;">
+                <button type="button" onclick="closeModal()" class="btn-primary-med" style="background: #f1f5f9; color: #475569;">Cancel</button>
+                <button type="submit" class="btn-primary-med">Deploy Assignment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById("assignModal");
+
+    function openModal() {
+        modal.style.display = "block";
+    }
+
+    function closeModal() {
+        modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+</script>
+
+{% endblock %}

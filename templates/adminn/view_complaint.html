@@ -1,0 +1,260 @@
+{% extends 'adminn/admin_extend.html' %}
+{% block body %}
+
+<style>
+    /* Page Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .page-title h2 {
+        color: #1a202c;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
+    /* Table Styling */
+    .complaint-card {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .med-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .med-table th {
+        background: #f7fafc;
+        padding: 15px 20px;
+        text-align: left;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        color: #718096;
+        border-bottom: 2px solid #edf2f7;
+    }
+
+    .med-table td {
+        padding: 20px;
+        border-bottom: 1px solid #edf2f7;
+        vertical-align: middle;
+    }
+
+    /* Staff Info */
+    .staff-profile {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .staff-avatar {
+        width: 40px;
+        height: 40px;
+        background: #1a73e8;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
+    /* Action Button */
+    .btn-reply {
+        background: #1a73e8;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.3s;
+    }
+
+    .btn-reply:hover { background: #1557b0; }
+
+    /* Modal Styling */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+        background-color: white;
+        margin: 10% auto;
+        padding: 30px;
+        border-radius: 15px;
+        width: 500px;
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+        from { transform: translateY(-50px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+        margin-bottom: 20px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .textarea-reply {
+        width: 100%;
+        height: 120px;
+        padding: 12px;
+        border: 1px solid #cbd5e0;
+        border-radius: 8px;
+        margin-top: 10px;
+        resize: none;
+    }
+
+    .status-pill {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-pending { background: #fff5f5; color: #c53030; border: 1px solid #feb2b2; }
+    .status-replied { background: #f0fff4; color: #2f855a; border: 1px solid #9ae6b4; }
+</style>
+
+<div class="page-header">
+    <div class="page-title">
+        <h2><i class="fas fa-comment-dots"></i> Staff Grievances</h2>
+    </div>
+    <div class="search-box">
+        <input type="text" id="searchInput" class="form-control" placeholder="Search by staff or message..."
+               style="border: 1px solid #ddd; padding: 10px 15px; border-radius: 8px; width: 300px;">
+    </div>
+</div>
+
+<div class="complaint-card">
+    <table class="med-table">
+        <thead>
+            <tr>
+                <th>Staff Member</th>
+                <th>Complaint Message</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            {% for i in data %}
+            <tr>
+                <td>
+                    <div class="staff-profile">
+                        <div class="staff-avatar">{{ i.STAFF.name|slice:":1" }}</div>
+                        <div>
+                            <div style="font-weight: 700; color: #2d3748;">{{ i.STAFF.name }}</div>
+                            <div style="font-size: 0.75rem; color: #718096;">ID: #STF-{{ i.STAFF.id }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <p style="margin: 0; color: #4a5568; font-size: 0.9rem; max-width: 400px; line-height: 1.4;">
+                        {{ i.complaint }}
+                    </p>
+                </td>
+                <td>
+                    <span style="font-size: 0.85rem; color: #718096;">{{ i.date }}</span>
+                </td>
+                <td>
+                    {% if i.reply == "pending" %}
+                        <span class="status-pill status-pending">Pending</span>
+                    {% else %}
+                        <span class="status-pill status-replied">Replied</span>
+                        <div style="font-size: 0.75rem; color: #48bb78; margin-top: 5px; font-style: italic;">
+                            "{{ i.reply }}"
+                        </div>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if i.reply == "pending" %}
+                    <button class="btn-reply" onclick="openReplyModal('{{ i.id }}', '{{ i.STAFF.name }}')">
+                        <i class="fas fa-reply"></i> Send Reply
+                    </button>
+                    {% else %}
+                    <i class="fas fa-check-double" style="color: #48bb78;" title="Action Completed"></i>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div id="replyModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle" style="margin:0;">Reply to Staff</h3>
+        </div>
+        <form action="/myapp/admin_send_reply_post/" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="complaint_id" id="complaint_id">
+            <label style="font-size: 0.85rem; color: #718096;">Type your response below:</label>
+            <textarea name="reply_message" class="textarea-reply" placeholder="Write your reply here..." required></textarea>
+
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn-reply" style="background: #e2e8f0; color: #4a5568;" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn-reply">Submit Reply</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById("replyModal");
+
+    function openReplyModal(id, name) {
+        document.getElementById("complaint_id").value = id;
+        document.getElementById("modalTitle").innerText = "Reply to " + name;
+        modal.style.display = "block";
+    }
+
+    function closeModal() {
+        modal.style.display = "none";
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        if (event.target == modal) { closeModal(); }
+    }
+
+    // Search Script
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('#tableBody tr');
+        rows.forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(searchTerm) ? '' : 'none';
+        });
+    });
+</script>
+
+{% endblock %}

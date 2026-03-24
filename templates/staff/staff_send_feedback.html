@@ -1,0 +1,156 @@
+{% extends 'staff/staff_index.html' %}
+{% block body %}
+
+<style>
+    .feedback-container {
+        max-width: 700px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .feedback-card {
+        background: #ffffff;
+        border-radius: 30px;
+        padding: 40px;
+        box-shadow: 0 15px 35px rgba(0, 97, 255, 0.05);
+        border: 1px solid #eef2f7;
+        position: relative;
+    }
+
+    .feedback-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .feedback-header i {
+        font-size: 2.5rem;
+        color: #0061ff;
+        margin-bottom: 15px;
+        background: #f0f7ff;
+        width: 80px;
+        height: 80px;
+        line-height: 80px;
+        border-radius: 50%;
+    }
+
+    .feedback-header h2 {
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    .feedback-header p {
+        color: #64748b;
+        font-size: 0.95rem;
+        margin-top: 5px;
+    }
+
+    /* Professional Textarea */
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 700;
+        color: #475569;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+    }
+
+    .feedback-textarea {
+        width: 100%;
+        min-height: 200px;
+        padding: 20px;
+        border: 2px solid #f1f5f9;
+        border-radius: 20px;
+        background: #f8fafc;
+        font-size: 1rem;
+        color: #1e293b;
+        resize: vertical;
+        transition: 0.3s;
+    }
+
+    .feedback-textarea:focus {
+        outline: none;
+        border-color: #0061ff;
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(0, 97, 255, 0.1);
+    }
+
+    .btn-submit-feedback {
+        width: 100%;
+        background: #0061ff;
+        color: white;
+        border: none;
+        padding: 16px;
+        border-radius: 15px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: 0.3s;
+    }
+
+    .btn-submit-feedback:hover {
+        background: #004ecc;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 97, 255, 0.2);
+    }
+
+    .date-indicator {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #94a3b8;
+        background: #f1f5f9;
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+</style>
+
+<div class="feedback-container">
+    <div class="feedback-card">
+        <div class="date-indicator">
+            <i class="far fa-calendar-alt"></i> Today: {% now "d M Y" %}
+        </div>
+
+        <div class="feedback-header">
+            <i class="fas fa-comment-medical"></i>
+            <h2>Submit Feedback</h2>
+            <p>Your insights help improve hospital operations.</p>
+        </div>
+
+        <form action="/myapp/staff_send_feedback_post/" method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label>Your Message</label>
+                <textarea 
+                    name="feedback_text" 
+                    class="feedback-textarea" 
+                    placeholder="Describe your experience, suggestions, or concerns here..."
+                    required
+                    maxlength="200"
+                ></textarea>
+                <div style="text-align: right; font-size: 0.75rem; color: #94a3b8; margin-top: 5px;">
+                    Maximum 200 characters
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit-feedback">
+                <i class="fas fa-paper-plane"></i> Send Feedback
+            </button>
+        </form>
+    </div>
+
+    <div style="margin-top: 30px; text-align: center; color: #64748b; font-size: 0.85rem;">
+        <i class="fas fa-shield-alt"></i> All feedback is reviewed by the Chief Medical Officer.
+    </div>
+</div>
+
+{% endblock %}

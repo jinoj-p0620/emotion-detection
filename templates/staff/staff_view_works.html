@@ -1,0 +1,209 @@
+{% extends 'staff/staff_index.html' %}
+{% block body %}
+
+<style>
+    .work-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 25px;
+    }
+
+    .work-card {
+        background: white;
+        border-radius: 24px;
+        padding: 25px;
+        border: 1px solid #e2e8f0;
+        transition: 0.3s;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .work-card:hover {
+        border-color: #0061ff;
+        box-shadow: 0 10px 30px rgba(0, 97, 255, 0.05);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+    }
+
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 10px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .pending { background: #fff7ed; color: #c2410c; }
+    .completed { background: #f0fdf4; color: #15803d; }
+
+    .deadline-info {
+        background: #f8fafc;
+        border-radius: 15px;
+        padding: 15px;
+        margin: 15px 0;
+    }
+
+    .deadline-info p {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-bottom: 5px;
+    }
+
+    .date-val {
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .expired { color: #e11d48 !important; }
+
+    .btn-action {
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: 0.3s;
+        text-decoration: none;
+    }
+
+    .btn-download { background: #f0f7ff; color: #0061ff; margin-bottom: 10px; }
+    .btn-submit { background: #0061ff; color: white; }
+    .btn-disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+
+    /* Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0; top: 0;
+        width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(8px);
+    }
+
+    .modal-content {
+        background: white;
+        margin: 10% auto;
+        padding: 30px;
+        border-radius: 24px;
+        width: 450px;
+    }
+</style>
+
+<div style="margin-bottom: 30px;">
+    <h2 style="font-weight: 800; font-size: 1.8rem; color: #1e293b;">
+        <i class="fas fa-clipboard-list" style="color: #0061ff; margin-right: 12px;"></i>Task Assignments
+    </h2>
+</div>
+
+<div class="work-grid">
+    {% for i in data %}
+    <div class="work-card">
+        <div>
+            <div class="card-header">
+                <div style="color: #64748b; font-size: 0.8rem; font-weight: 600;">
+                    ASSIGNED: {{ i.date }}
+                </div>
+                <div class="status-badge {% if i.status == 'pending' %}pending{% else %}completed{% endif %}">
+                    {{ i.status }}
+                </div>
+            </div>
+
+            <h3 style="margin-bottom: 10px; font-weight: 700;">Clinical Assignment #{{ i.id }}</h3>
+            
+            <div class="deadline-info">
+                <p>Deadline Date</p>
+                <div class="date-val {% if i.last_date < today and i.status == 'pending' %}expired{% endif %}">
+                    <i class="far fa-calendar-times"></i> {{ i.last_date }}
+                    {% if i.last_date < today and i.status == 'pending' %}
+                        <span style="font-size: 0.7rem;">(EXPIRED)</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <a href="{{ i.work.url }}" class="btn-action btn-download">
+                <i class="fas fa-file-download"></i> Download Task File
+            </a>
+
+            {% if i.status == 'completed' %}
+                <div style="text-align: center; color: #15803d; font-weight: 700; font-size: 0.9rem; padding: 10px;">
+                    <i class="fas fa-check-double"></i> Submission Received
+                </div>
+            {% elif i.last_date < today %}
+                <button class="btn-action btn-disabled">
+                    <i class="fas fa-ban"></i> Submission Locked (Past Due)
+                </button>
+            {% else %}
+                <button onclick="openUploadModal('{{ i.id }}')" class="btn-action btn-submit">
+                    <i class="fas fa-cloud-upload-alt"></i> Submit Work
+                </button>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div style="grid-column: 1/-1; text-align: center; padding: 100px; color: #94a3b8;">
+        <i class="fas fa-tasks" style="font-size: 4rem; opacity: 0.2; margin-bottom: 20px;"></i>
+        <p>No assignments found for your profile.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<div id="uploadModal" class="modal">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h3 style="font-weight: 800;">Upload Completed Work</h3>
+            <span onclick="closeModal()" style="cursor: pointer; font-size: 1.5rem; color: #94a3b8;">&times;</span>
+        </div>
+
+        <form action="/myapp/staff_submit_work_post/" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="work_id" id="submit_work_id">
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 10px;">Select Completion File</label>
+                <input type="file" name="submission_file" required 
+                    style="width: 100%; padding: 10px; border: 1px dashed #0061ff; border-radius: 10px; background: #f0f7ff;">
+            </div>
+
+            <p style="font-size: 0.75rem; color: #64748b; margin-bottom: 20px;">
+                Note: Once submitted, the status will change to "completed" and you won't be able to re-upload.
+            </p>
+
+            <button type="submit" class="btn-action btn-submit">
+                Confirm Submission
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openUploadModal(id) {
+        document.getElementById('submit_work_id').value = id;
+        document.getElementById('uploadModal').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('uploadModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('uploadModal')) {
+            closeModal();
+        }
+    }
+</script>
+
+{% endblock %}
